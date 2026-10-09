@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>你的气质最像哪位明星</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft Yahei",sans-serif;}
+        body{background:#1a1a2e;color:#fff;min-height:100vh;padding:20px;}
+        .container{max-width:700px;margin:0 auto;}
+        .start-box,.result-box{text-align:center;padding:40px 20px;}
+        .start-box h1{font-size:32px;margin-bottom:20px;color:#f0d8ff;}
+        .start-box p{color:#c9c9e2;margin-bottom:30px;font-size:17px;line-height:1.6;}
+        .btn{padding:14px 36px;border:none;border-radius:30px;background:#9368e9;color:#fff;font-size:18px;cursor:pointer;transition:0.3s;}
+        .btn:hover{background:#7b4cdb;transform:scale(1.03);}
+        .question-box{display:none;padding:20px;}
+        .q-title{font-size:22px;margin-bottom:24px;line-height:1.5;}
+        .options{display:flex;flex-direction:column;gap:14px;}
+        .option{padding:16px 20px;border:1px solid #444470;border-radius:12px;cursor:pointer;transition:0.2s;}
+        .option:hover{background:#2c2c54;border-color:#9368e9;}
+        .progress{margin:20px 0;color:#b8b8d8}
+        .result-box{display:none;}
+        .result-box h2{font-size:30px;color:#ffd6ec;margin-bottom:16px;}
+        .result-desc{font-size:17px;line-height:1.7;color:#e2e2ff;margin:20px 0 30px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 开始页 -->
+    <div class="start-box" id="start">
+        <h1>你的气质最像哪位明星</h1>
+        <p>一共6道小问题，凭第一直觉选择答案<br>测一测藏在你骨子里的明星气质</p>
+        <button class="btn" onclick="startTest()">开始测试</button>
+    </div>
+
+    <!-- 答题区域 -->
+    <div class="question-box" id="question">
+        <div class="progress">第 <span id="current">1</span> / 6 题</div>
+        <div class="q-title" id="q-title"></div>
+        <div class="options" id="options"></div>
+    </div>
+
+    <!-- 结果页 -->
+    <div class="result-box" id="result">
+        <h2>你的气质：<span id="starName"></span></h2>
+        <div class="result-desc" id="starDesc"></div>
+        <button class="btn" onclick="restart()">重新测试</button>
+    </div>
+</div>
+
+<script>
+// 题库：每个选项附带气质分数 [清冷,阳光,知性,复古,甜酷]
+const questions = [
+    {
+        title:"休闲穿搭你更喜欢？",
+        answers:[
+            {text:"简约纯色，低饱和度，干净克制",score:[4,0,2,1,0]},
+            {text:"亮色卫衣、运动风，元气有活力",score:[0,4,0,1,2]},
+            {text:"衬衫、针织，稳重温柔耐看",score:[1,1,4,2,0]},
+            {text:"港风复古，大衣/牛仔，氛围感拉满",score:[2,0,1,4,1]},
+            {text:"个性潮牌，配饰多，又飒又灵动",score:[1,1,0,1,4]}
+        ]
+    },
+    {
+        title:"周末空闲你更愿意？",
+        answers:[
+            {text:"独自看书、听歌，安静独处",score:[4,0,3,1,0]},
+            {text:"约朋友出门逛街聚餐热闹一下",score:[0,4,0,1,2]},
+            {text:"看纪录片、展览，慢慢充实自己",score:[1,0,4,2,0]},
+            {text:"老电影、逛老街，喜欢怀旧事物",score:[2,1,1,4,0]},
+            {text:"尝试新事物，探店、玩小众项目",score:[0,2,0,1,4]}
+        ]
+    },
+    {
+        title:"别人评价你的性格，更多是？",
+        answers:[
+            {text:"外冷内热，话不多，自带距离感",score:[4,0,1,2,0]},
+            {text:"开朗爱笑，感染力强很好相处",score:[0,4,1,0,2]},
+            {text:"温和通透，遇事冷静有想法",score:[1,1,4,1,0]},
+            {text:"情绪细腻，浪漫怀旧有故事感",score:[2,0,1,4,1]},
+            {text:"敢说敢做，不喜欢被规矩束缚",score:[0,1,0,1,4]}
+        ]
+    },
+    {
+        title:"拍照时你偏爱哪种感觉？",
+        answers:[
+            {text:"极简留白，表情清淡高级感",score:[4,0,2,0,1]},
+            {text:"笑容灿烂，元气满满的生活感",score:[0,4,0,1,2]},
+            {text:"柔和光影，从容大方的气质",score:[1,1,4,2,0]},
+            {text:"暖黄胶片，复古氛围感",score:[2,0,1,4,1]},
+            {text:"酷感姿势，眼神抓人很有张力",score:[0,1,0,1,4]}
+        ]
+    },
+    {
+        title:"遇到压力大的时候你会？",
+        answers:[
+            {text:"自己消化情绪，不轻易倾诉",score:[4,0,2,1,0]},
+            {text:"找人倾诉，吐槽完就翻篇",score:[0,4,0,1,2]},
+            {text:"理性梳理问题，慢慢解决",score:[1,1,4,1,0]},
+            {text:"沉浸音乐电影，沉浸情绪里",score:[2,0,1,4,0]},
+            {text:"直接行动，用忙碌转移烦恼",score:[0,2,0,1,4]}
+        ]
+    },
+    {
+        title:"你更偏爱哪一类音乐？",
+        answers:[
+            {text:"空灵轻音乐、抒情慢歌",score:[4,0,2,1,0]},
+            {text:"流行轻快、治愈甜歌",score:[0,4,0,1,2]},
+            {text:"经典老歌、叙事感强的作品",score:[1,1,4,2,0]},
+            {text:"怀旧金曲、港风旋律",score:[2,0,1,4,1]},
+            {text:"摇滚、说唱，节奏感强",score:[0,1,0,1,4]}
+        ]
+    }
+];
+
+// 结果库，对应五种气质
+const resultList = [
+    {name:"刘亦菲",desc:"你自带疏离干净的清冷感，安静通透，不需要刻意讨好谁。淡淡的氛围感，安静的时候最吸引人，自带电影女主滤镜。"},
+    {name:"肖战",desc:"你浑身充满活力，笑容很有感染力。性格真诚热烈，很容易带动身边人的情绪，是人群里温暖耀眼的存在。"},
+    {name:"俞飞鸿",desc:"你气质从容文雅，内心丰盈有主见。待人温和有分寸，谈吐舒服耐看，属于越了解越有魅力的类型。"},
+    {name:"梁朝伟",desc:"你骨子里带着怀旧浪漫，充满故事感。审美独特，自带旧时光滤镜，举手投足有种经典港风质感。"},
+    {name:"杨幂",desc:"你甜飒并存，不随波逐流。有自己的态度和审美，敢表达自我，又灵动又有冲击力，辨识度极高。"}
+];
+
+let currentQ = 0;
+let scores = [0,0,0,0,0];
+
+// 开始测试
+function startTest(){
+    document.getElementById('start').style.display="none";
+    document.getElementById('question').style.display="block";
+    currentQ=0;
+    scores=[0,0,0,0,0];
+    renderQuestion();
+}
+
+//渲染题目
+function renderQuestion(){
+    const q = questions[currentQ];
+    document.getElementById('current').innerText = currentQ+1;
+    document.getElementById('q-title').innerText = q.title;
+    const optWrap = document.getElementById('options');
+    optWrap.innerHTML="";
+    q.answers.forEach((item,idx)=>{
+        const div = document.createElement('div');
+        div.className="option";
+        div.innerText = item.text;
+        div.onclick = ()=>{
+            //累加分数
+            for(let i=0;i<5;i++) scores[i] += item.score[i];
+            currentQ++;
+            if(currentQ >= questions.length){
+                showResult();
+            }else{
+                renderQuestion();
+            }
+        }
+        optWrap.appendChild(div);
+    })
+}
+
+//展示结果
+function showResult(){
+    document.getElementById('question').style.display="none";
+    document.getElementById('result').style.display="block";
+    //找出最高分下标
+    let maxIdx = 0;
+    let maxVal = scores[0];
+    for(let i=1;i<scores.length;i++){
+        if(scores[i]>maxVal){
+            maxVal=scores[i];
+            maxIdx=i;
+        }
+    }
+    const res = resultList[maxIdx];
+    document.getElementById('starName').innerText = res.name;
+    document.getElementById('starDesc').innerText = res.desc;
+}
+
+//重新测试
+function restart(){
+    document.getElementById('result').style.display="none";
+    document.getElementById('start').style.display="block";
+}
+</script>
+</body>
+</html>
